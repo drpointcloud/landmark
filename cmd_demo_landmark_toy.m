@@ -355,8 +355,8 @@ for ii = 1:s
 end
 colormap(flipud(gray))
 
-m = size(X,1);
-n = size(Y,1);
+n = size(X,1);
+m = size(Y,1);
 dim = get(h,'Position') -  [0.1 h.Position(2) 0 0];
 if m~=n
     str = ['m\neqn  ',sprintf('N_X=%d, N_Y=%d',n,m)];
