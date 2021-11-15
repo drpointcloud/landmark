@@ -13,11 +13,11 @@ load('/Users/yuksel/Documents/Dataset/EMNIST/emnist-mnist.mat');
 % Requires minFunc_2012
 %  addpath(genpath('path_to/minFunc_2012'))
 %%
-sample_size = 500;%round(100*linspace(1,7,5)); % Number of samples from p_X
+sample_size = round(100*linspace(1,5,5)); % Number of samples from p_X
 nperms = 1;
-p_missing = 0.85;%linspace(0,1,9);% for scenario two % the digit has 100*(1-q)% of
-nmonte = 1;%10*numel(p_missing);  % must be divisible by 3
-classes = ['0','1','2','3','4','5','6','7','8','9'];
+p_missing = linspace(0,1,8);% for scenario two % the digit has 100*(1-q)% of
+nmonte = 250;%10*numel(p_missing);  % must be divisible by 3
+classes = ['0','1'];%,'2','3','4','5','6','7','8','9'];
 
 %%
 methods = {
@@ -59,7 +59,8 @@ timestart = tic;
 progress = '..........';
 %%
 for sample_ii = 1:numel(sample_size)
-    N = sample_size(sample_ii);
+    Nx = sample_size(sample_ii);
+    Ny = round(1*Nx);
     
     for pmiss_ii = 1:numel(p_missing)
         p_with_missing = p_missing(pmiss_ii);
@@ -82,15 +83,15 @@ for sample_ii = 1:numel(sample_size)
             %orderings = cell(size(auc));          
             
             aaa=aaa+1;
-            for monte_ii = 1:nmonte
+            parfor monte_ii = 1:nmonte
                 
                 %X has very few of missing %Y has all characters
                 %density ratio p_Y(x)/p_X(x) should be very large for x in missing
-                y_sel = randperm(numel(dataset.test.labels),N);
+                y_sel = randperm(numel(dataset.test.labels),Ny);
                 not_label = dataset.mapping(dataset.mapping(:,2)==l,1);
                 subset = find(dataset.train.labels~=not_label);
-                x_sel1 = subset(randperm(numel(subset),round(N*p_with_missing)));
-                x_sel2 = randperm(numel(dataset.train.labels), N - round(N*p_with_missing));
+                x_sel1 = subset(randperm(numel(subset),round(Nx*p_with_missing)));
+                x_sel2 = randperm(numel(dataset.train.labels), Nx - round(Nx*p_with_missing));
                 x_sel = cat(1,x_sel1(:),x_sel2(:));
                 %[a,~]=hist(L_X,unique(dataset.train.labels(x_sel)))
                 
@@ -266,59 +267,6 @@ for i = 1:numel(pow_alpha)
     grid on
 end
 
-%% plot AUC as a function of sample size
-% 1-ssize, 2-pmiss, 3-classes,4-nmonte, 5-methods
-mean_auc = mean(Auc(:,:,1,:,:),4);
-
-%to adjust subplot positions: do not change
-n_row = 1; n_col = 2; % # of columns and rows
-fig_width = 0.8;fig_height= 0.65;
-pad_w = (1-fig_width)/(n_col+1); pad_h = (1-fig_height)/(n_row+1);
-axis_w = 1/n_col*fig_width; axis_h = 1/n_row*fig_height;
-
-figure(20),clf
-for i=1:n_col
-    %to adjust subplot positions
-    row = floor((i-1)/n_col)+1;col = mod(i-1,n_col)+1;
-    axis_l = axis_w*(col-1) + pad_w*col;axis_b = axis_h*(n_row-row) + pad_h*(n_row-row+1);
-    if i==1
-        subplot('position', [axis_l axis_b axis_w axis_h] )
-        kk=0;
-        for method_ii=1:numel(total_methods)
-            kk=kk+1;
-            plot(mean_auc(end,:,:,:,method_ii),'linestyle',linestyle{kk},...
-                'linewidth',linewidth,'Marker',markers{kk},'MarkerSize',markersize);hold on
-        end
-        
-        t = title(['AUC (N=',sprintf('%d)\n',sample_ii)]);%,'Position',[])
-        set(t,'position',get(t,'position')-[0 axis_b/50 0])
-        xlabel('Prevalence of underrepresented class');ylabel('AUC');
-        xticks(1:numel(p_missing)-1)
-        set(gca,'XTickLabel',sprintf('%0.3f\n',(1-p_missing(2:end))/10),'fontsize',fontsize)
-        legend(methods_name,'FontSize',legendfontsize,'Location','southeast','interpreter','latex')
-        grid on
-        
-    elseif i==2
-        kk=0;
-        p_miss = 1;
-        subplot('position', [axis_l axis_b axis_w axis_h])
-        for method_ii=1:numel(total_methods)
-            kk=kk+1;
-            plot(mean_auc(:,p_miss,:,:,method_ii),'linestyle',linestyle{kk},...
-                'linewidth',linewidth,'Marker',markers{kk},'MarkerSize',markersize);hold on
-        end
-        
-        t = title(['AUC (Prevalence = ',sprintf('%0.3f)\n',(1-p_missing(p_miss))/10)]);
-        set(t,'position',get(t,'position')-[0 axis_b/50 0])
-        xlabel('Sample size (N)'); ylabel('AUC'); 
-        xticks(1:numel(sample_size))
-        set(gca,'XTickLabel',sprintf('%d\n',sample_size),'fontsize',fontsize)
-        legend(methods_name,'FontSize',legendfontsize,'Location','southeast','interpreter','latex')
-        grid on
-    else
-    end
-end
-
 
 %% plot p@10 as a function of sample size        
 methods_name = arrayfun(@(i) total_methods{i}{2},(1:3),'uni',0);
@@ -336,7 +284,7 @@ i=1; %to adjust subplot positions
 row = floor((i-1)/n_col)+1;col = mod(i-1,n_col)+1;
 axis_l = axis_w*(col-1) + pad_w*col;axis_b = axis_h*(n_row-row) + pad_h*(n_row-row+1);
 
-figure(21),clf
+figure(4),clf
 kk=0;
 subplot('position', [axis_l axis_b axis_w axis_h] )
 for method_ii=1:numel(total_methods)
