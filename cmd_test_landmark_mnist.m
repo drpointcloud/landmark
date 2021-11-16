@@ -13,19 +13,19 @@ load('/Users/yuksel/Documents/Dataset/EMNIST/emnist-mnist.mat');
 % Requires minFunc_2012
 %  addpath(genpath('path_to/minFunc_2012'))
 %%
-sample_size = round(100*linspace(1,5,5)); % Number of samples from p_X
+sample_size = 500;%round(100*linspace(1,5,5)); % Number of samples from p_X
 nperms = 1;
-p_missing = linspace(0,1,8);% for scenario two % the digit has 100*(1-q)% of
-nmonte = 250;%10*numel(p_missing);  % must be divisible by 3
-classes = ['0','1'];%,'2','3','4','5','6','7','8','9'];
+p_missing = 0.8;%linspace(0,1,8);% for scenario two % the digit has 100*(1-q)% of
+nmonte = 1;%10*numel(p_missing);  % must be divisible by 3
+classes = ['0','1','2','3','4','5','6','7','8','9'];
 
 %%
 methods = {
-    {@(K,x_idx,method) kernel_max_proj_landmark(K,x_idx,method,nperms), 'L-Bures-max',@(x) x};
+    %{@(K,x_idx,method) kernel_max_proj_landmark(K,x_idx,method,nperms), 'L-Bures-max',@(x) x};
     {@(K,x_idx,method) kernel_max_proj_landmark(K,x_idx,method,nperms), 'L-W2-max',@(x) x};
     %{@(K,x_idx,method) kernel_max_proj_landmark(K,x_idx,method,nperms), 'L-Bures-mean',@(x) abs(x)};
     %{@(K,x_idx,method) kernel_max_proj_landmark(K,x_idx,method,nperms), 'L-W2-mean',@(x) x};
-    {@(K,x_idx,method) kernel_max_proj(K,x_idx,method,nperms), 'MMD',@(x) x};
+    %{@(K,x_idx,method) kernel_max_proj(K,x_idx,method,nperms), 'MMD',@(x) x};
     %{@(K,x_idx,method) kernel_max_proj(K,x_idx,method,nperms), 'W2',@(x) x};
     %{@(K,x_idx,method) kernel_max_proj(K,x_idx,method,nperms), 'Bures',@(x) abs(x)};
     %{@(K,x_idx,method) kernel_max_proj(K,x_idx,method,nperms), 'Kolmogorov',@(x) abs(x)};
@@ -60,7 +60,7 @@ progress = '..........';
 %%
 for sample_ii = 1:numel(sample_size)
     Nx = sample_size(sample_ii);
-    Ny = round(1*Nx);
+    Ny = round(0.8*Nx);
     
     for pmiss_ii = 1:numel(p_missing)
         p_with_missing = p_missing(pmiss_ii);
@@ -72,12 +72,12 @@ for sample_ii = 1:numel(sample_size)
             %set(h,'name',['digit',sprintf('%d',label_ii-1)],'numbertitle','on')%name of the figure
             %set(h,'WindowStyle','docked') %dock the figure
             
-            %d_nperms =  zeros(nmonte,Nmthds,nperms);
+            d_nperms =  zeros(nmonte,Nmthds,nperms);
             time_spnt = zeros(nmonte,Nmthds);
-            %div_value = time_spnt;
-            %betahat = div_value;
+            div_value = time_spnt;
+            betahat = div_value;
             witness = cell(size(time_spnt));
-            %alphas = witness;
+            alphas = witness;
             auc = nan(nmonte,Nmthds);
             p_at_10 = auc;
             %orderings = cell(size(auc));          
@@ -110,16 +110,16 @@ for sample_ii = 1:numel(sample_size)
                     
                     method_way = methods{method_ii}{1};
                     method = methods{method_ii}{2};
-                    %tic
-                    [V,~,~,~] =  method_way(K,x_idx,method);
-                    %[V,divs,alpha,D1] =  method_way(K,x_idx,method);
-                    %time_spnt(monte_ii, method_ii) = toc;
-                    %d_nperms(monte_ii, method_ii,:) = D1;
+                    tic
+                    %[V,~,~,~] =  method_way(K,x_idx,method);
+                    [V,divs,alpha,D1] =  method_way(K,x_idx,method);
+                    time_spnt(monte_ii, method_ii) = toc;
+                    d_nperms(monte_ii, method_ii,:) = D1;
                     % if mean(D1>=div), then reject the H_0 (null hypothesis)
-                    %betahat(monte_ii, method_ii) = mean(D1>=divs);
-                    %div_value(monte_ii, method_ii) = divs;
+                    betahat(monte_ii, method_ii) = mean(D1>=divs);
+                    div_value(monte_ii, method_ii) = divs;
                     witness{monte_ii,method_ii} = V;
-                    %alphas{monte_ii,method_ii} = alpha;
+                    alphas{monte_ii,method_ii} = alpha;
                 %end
                 
                 %%
@@ -138,7 +138,7 @@ for sample_ii = 1:numel(sample_size)
                         ordering = ordering(end:-1:1);
                     end
                     p_at_10(monte_ii,method_ii) = mean(L_Y(ordering(1:numel(classes)))==not_label); %## works
-                    %orderings{monte_ii,method_ii} = ordering;
+                    orderings{monte_ii,method_ii} = ordering;
                     %%
 %                     k=10;
 %                     to_display = ordering(1:k)';
@@ -167,21 +167,23 @@ for sample_ii = 1:numel(sample_size)
                 end  %methods
             end% nmonte
             %1-ssize,2-pmiss,3-class,4-nmonte,5-methods,6-2
-            %Time_spnt(sample_ii, p_miss_ii,label_ii,:,:) = time_spnt;
-            %D_nperms( sample_ii, p_miss_ii,label_ii,:,:,:) = d_nperms;
-            %Betahat(  sample_ii, p_miss_ii,label_ii,:,:) = betahat;
-            %Div_value(sample_ii, p_miss_ii,label_ii,:,:) = div_value;
-            %Witness(sample_ii, pmiss_ii,label_ii,:,:) = witness;
-            %Alphas(sample_ii, p_miss_ii,label_ii,:,:) = alphas;
-            %Auc(    sample_ii, pmiss_ii,label_ii,:,:) = auc;
+            Time_spnt(sample_ii, pmiss_ii,label_ii,:,:) = time_spnt;
+            D_nperms( sample_ii, pmiss_ii,label_ii,:,:,:) = d_nperms;
+            Betahat(  sample_ii, pmiss_ii,label_ii,:,:) = betahat;
+            Div_value(sample_ii, pmiss_ii,label_ii,:,:) = div_value;
+            Witness(sample_ii, pmiss_ii,label_ii,:,:) = witness;
+            Alphas(sample_ii, pmiss_ii,label_ii,:,:) = alphas;
+            Auc(    sample_ii, pmiss_ii,label_ii,:,:) = auc;
             P_at_10(sample_ii, pmiss_ii,label_ii,:,:) = p_at_10;
-            %Orderings(sample_ii, p_miss_ii,label_ii,:,:) = orderings;
+            Orderings(sample_ii, pmiss_ii,label_ii,:,:) = orderings;
             
             clc
             progress = progress_print(aaa,perc,timestart,progress);
         end % classes
     end % p_missing
 end % sample size
+
+
 %%
 datestr(now)
 linestyle= {':',':',':','-','-','-','-',':','--','-'};
@@ -284,7 +286,7 @@ i=1; %to adjust subplot positions
 row = floor((i-1)/n_col)+1;col = mod(i-1,n_col)+1;
 axis_l = axis_w*(col-1) + pad_w*col;axis_b = axis_h*(n_row-row) + pad_h*(n_row-row+1);
 
-figure(4),clf
+figure(6),clf
 kk=0;
 subplot('position', [axis_l axis_b axis_w axis_h] )
 for method_ii=1:numel(total_methods)

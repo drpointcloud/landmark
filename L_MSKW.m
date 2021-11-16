@@ -39,10 +39,14 @@ K = (K + K.')/2; %ensure symmetric  (doesn't ensure PSD)
 
 
 if m==n  % assumes the X and Y are equal size
-    landmark_divs = mean( (sort(K_X_Z) - sort(K_Y_Z)).^2 , 1);
+    %landmark_divs = mean( (sort(K_X_Z) - sort(K_Y_Z)).^2 , 1);    
+    G = min((0:1/m:1)',(0:1/n:1));
+    P = diff(diff(G,1,1),1,2);
+    landmark_divs = mean(K_X_Z.^2,1) + mean(K_Y_Z.^2,1) - 2*sum((P'*sort(K_X_Z)).*sort(K_Y_Z) ,1);
 else %if m is not equal to n, mass spliting applied for exact corresponding
     G = min((0:1/m:1)',(0:1/n:1));
     P = diff(diff(G,1,1),1,2);
+    %landmark_divs = mean( (n*P'*sort(K_X_Z) - sort(K_Y_Z)).^2 , 1);
     %landmark_divs = sqrt( mean( (n*P'*sort(K_X_Z) - sort(K_Y_Z)).^2 , 1));
     landmark_divs = mean(K_X_Z.^2,1) + mean(K_Y_Z.^2,1) - 2*sum((P'*sort(K_X_Z)).*sort(K_Y_Z) ,1);
 end

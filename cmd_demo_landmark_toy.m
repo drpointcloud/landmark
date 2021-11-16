@@ -4,8 +4,8 @@ clc
 %%
 % Generate data in two distribution whose support looks like Venn diagrams
 savedir =   '/Users/yuksel/Desktop/';
-rng(10);
-n = 500;
+%rng(10);
+n = 200;
 d = 2;
 p = 500;
 nperms = 1;
@@ -23,25 +23,26 @@ methods_landmark = {
     };
 
 methods1 = {
-    {@(K,x_idx,method) kernel_max_slice(K,x_idx,method), 'MMD','MMD',@(x) x};
-    {@(K,x_idx,method) kernel_max_slice(K,x_idx,method), 'W2','W2',@(x) x};
+    %{@(K,x_idx,method) kernel_max_slice(K,x_idx,method), 'MMD','MMD',@(x) x};
+    %{@(K,x_idx,method) kernel_max_slice(K,x_idx,method), 'W2','W2',@(x) x};
     %{@(K,x_idx,method) kernel_max_slice(K,x_idx,method), 'Bures','Bures',@(x) x};
     };
 
 methods_landmark_rfb = {
-    {@(K,x_idx,method) kernel_max_proj_landmark(K,x_idx,method,nperms),'L-W2-max','L-W2-RFB',@(x) x};
+    %{@(K,x_idx,method) kernel_max_proj_landmark(K,x_idx,method,nperms),'L-W2-max','L-W2-RFB',@(x) x};
     %{@(K,x_idx,method) kernel_max_proj_landmark(K,x_idx,method,nperms),'L-Bures','L-Bures-RFB',@(x) x};
     };
 
 methods1_rfb = {
-    {@(K,x_idx,method) kernel_max_slice(K,x_idx,method), 'MMD','MMD-RFB',@(x) x};
-    {@(K,x_idx,method) kernel_max_slice(K,x_idx,method), 'W2','W2-RFB',@(x) x};
+    %{@(K,x_idx,method) kernel_max_slice(K,x_idx,method), 'MMD','MMD-RFB',@(x) x};
+    %{@(K,x_idx,method) kernel_max_slice(K,x_idx,method), 'W2','W2-RFB',@(x) x};
     %{@(K,x_idx,method) kernel_max_slice(K,x_idx,method), 'Bures','Bures-RFB',@(x) x};
     };
 
 methods = cat(1,methods_landmark,methods1,methods_landmark_rfb,methods1_rfb);
 methods_name = arrayfun(@(i) methods{i}{3},(1:numel(methods)),'uni',0);
 
+for ii = 1:10
 %% Create data
 % Create uniform with circular support using rejection sampling
 Z = 2*(rand(4*5*n,2)-0.5);
@@ -52,12 +53,13 @@ offsets = 1.5*[1 0 ; 0 0; cos(pi/3) sin(pi/3)];
 X = Z(1:n,:) + offsets(randi(3,n,1), :); % X ~ \mu is uniformly across the support
 %Y ~ \nu has mass [0, 1/3, 2/3] in each circle
 
-m = round(n*1); %n*1 is when m=n
+m = 200; %n*1 is when m=n
 Y = Z(m+1:2*m,:) + offsets(2+(rand(m,1)>1/3), :);
 
 
 %%
 Time_spnt = nan(numel(methods));
+Div_value = Time_spnt;
 Witness = cell(size(Time_spnt));
 Alphas = Witness;
 %%
@@ -83,10 +85,11 @@ offset = 0;
 for method_ii = 1:numel(methods_landmark)
     method_way = methods_landmark{method_ii}{1};
     method = methods_landmark{method_ii}{2};
-    [V,~,alphas,~] =  method_way(K,x_idx,method);
+    [V,divs,alphas,D1] =  method_way(K,x_idx,method);
     Witness{method_ii+offset} = V;
     Alphas{method_ii+offset} = alphas;
     W = Witness{method_ii+offset};
+    Div_value(method_ii+offset) = divs;
     
     omega_X_ge_Y = W;%W(W<0);%W(:,1);
     omega_X_le_Y = W;%W(W>0);%W(:,2);
@@ -109,11 +112,11 @@ for method_ii = 1:numel(methods_landmark)
     omega_X_le_Y_test(:) = (kappa([X_test(:),Y_test(:)],Z,sigma)*alpha2).^2;
     
     k = 10; % Number of witness points top-k
-    s = 2; %two figures (bures is two sided, so 4 figures)
+    s = 2; % two figures (bures is two sided, so 4 figures)
     
-    h = figure(10+method_ii);clf;set(h,'WindowStyle','docked') %dock the figure
-    plotfigures(X,Y,s,k,X_test,Y_test,omega_X_ge_Y_test,omega_X_le_Y_test,sigma_ge,sigma_le,pi_ge,pi_le,methods_name{method_ii+offset})
-    printfigure(savedir,methods_name{method_ii+offset})
+    %h = figure(10+method_ii);clf;set(h,'WindowStyle','docked') %dock the figure
+    %plotfigures(X,Y,s,k,X_test,Y_test,omega_X_ge_Y_test,omega_X_le_Y_test,sigma_ge,sigma_le,pi_ge,pi_le,methods_name{method_ii+offset})
+    %printfigure(savedir,methods_name{method_ii+offset})
 end
 
 %% Baseline Method(s)
@@ -125,11 +128,11 @@ for method_ii = 1:numel(methods1)
     Witness{method_ii+offset} = V;
     Alphas{method_ii+offset} = alphas;
     W = Witness{method_ii+offset};
-
-    switch method_ii
+    
+    switch lower(method)
         
-        %% MMD
-        case 1
+        %% MMD or Bures
+        case 'mmd'
             
             W1 = W; W1(W1<0)=0; %positive
             W2 = W; W2(W2>0)=0; %negative
@@ -161,7 +164,36 @@ for method_ii = 1:numel(methods1)
             plotfigures(X,Y,s,k,X_test,Y_test,omega_X_ge_Y_test,omega_X_le_Y_test,sigma_ge,sigma_le,pi_ge,pi_le,methods_name{method_ii+offset})
             printfigure(savedir,methods_name{method_ii+offset})
             
-        %% W2
+            %% Bures
+        case 'bures'
+            omega_X_ge_Y = W(:,1);
+            omega_X_le_Y = W(:,2);
+            % Get coefficients for defining witness functions
+            alpha1 = alphas(:,1);
+            alpha2 = alphas(:,2);
+            
+            % Sort the witness function evaluations by their magnitude
+            % Points from X ~ \mu
+            [~,pi_ge] = sort(omega_X_ge_Y(x_idx).^2,'descend');
+            [~,pi_le] = sort(omega_X_le_Y(x_idx).^2,'descend');
+            % Points from Y ~ \nu
+            [~,sigma_ge] = sort(omega_X_ge_Y(~x_idx).^2,'descend');
+            [~,sigma_le] = sort(omega_X_le_Y(~x_idx).^2,'descend');
+            % Get magnitude of witness function evaluations on test points
+            omega_X_ge_Y_test = 0*X_test;
+            omega_X_ge_Y_test(:) = (kappa([X_test(:),Y_test(:)],Z,sigma)*alpha1).^2;
+            omega_X_le_Y_test = 0*X_test;
+            omega_X_le_Y_test(:) = (kappa([X_test(:),Y_test(:)],Z,sigma)*alpha2).^2;
+            
+            
+            k = 10; % Number of witness points top-k
+            s = 4; %two figures (bures is two sided, so 4 figures)
+            
+            h = figure(20+method_ii);clf;set(h,'WindowStyle','docked') %dock the figure
+            plotfigures(X,Y,s,k,X_test,Y_test,omega_X_ge_Y_test,omega_X_le_Y_test,sigma_ge,sigma_le,pi_ge,pi_le,methods_name{method_ii+offset})
+            printfigure(savedir,methods_name{method_ii+offset})
+            
+            %% W2
         otherwise
             
             omega_X_ge_Y = W;%W(W<0);%W(:,1);
@@ -204,12 +236,20 @@ for method_ii = 1:numel(methods_landmark_rfb)
     Alphas{method_ii+offset} = alpha;
     W = Witness{method_ii+offset};
     
-    omega_X_ge_Y = W;%W(W<0);%W(:,1);
-    omega_X_le_Y = W;%W(W>0);%W(:,2);
-    
-    % Get coefficients for defining witness functions
-    alpha1 = alphas;
-    alpha2 = alphas;
+    switch lower(method)
+        case 'l-w2'
+            omega_X_ge_Y = W;%W(W<0);%W(:,1);
+            omega_X_le_Y = W;%W(W>0);%W(:,2);
+            % Get coefficients for defining witness functions
+            alpha1 = alphas;
+            alpha2 = alphas;
+        case 'bures'
+            omega_X_ge_Y = W(:,1);
+            omega_X_le_Y = W(:,2);
+            % Get coefficients for defining witness functions
+            alpha1 = alphas(:,1);
+            alpha2 = alphas(:,2);
+    end
     
     % Sort the witness function evaluations by their magnitude
     % Points from X ~ \mu
@@ -243,11 +283,11 @@ for method_ii = 1:numel(methods1_rfb)
     Witness{method_ii+offset} = V;
     Alphas{method_ii+offset} = alphas;
     W = Witness{method_ii+offset};
-
-    switch method_ii
+    
+    switch lower(method)
         
-        %% MMD
-        case 1
+        case 'mmd'
+            
             W1 = W; W1(W1<0)=0; %positive
             W2 = W; W2(W2>0)=0; %negative
             
@@ -270,6 +310,35 @@ for method_ii = 1:numel(methods1_rfb)
             omega_X_ge_Y_test(:) = (kappa([X_test(:),Y_test(:)],Z,sigma)*alpha1);
             omega_X_le_Y_test = 0*X_test;
             omega_X_le_Y_test(:) = (kappa([X_test(:),Y_test(:)],Z,sigma)*alpha2);
+            
+            k = 10; % Number of witness points top-k
+            s = 4; %two figures (bures is two sided, so 4 figures)
+            
+            h = figure(40+method_ii);clf;set(h,'WindowStyle','docked') %dock the figure
+            plotfigures(X,Y,s,k,X_test,Y_test,omega_X_ge_Y_test,omega_X_le_Y_test,sigma_ge,sigma_le,pi_ge,pi_le,methods_name{method_ii+offset})
+            printfigure(savedir,methods_name{method_ii+offset})
+            
+            %% Bures
+        case 'bures'
+            omega_X_ge_Y = W(:,1);
+            omega_X_le_Y = W(:,2);
+            % Get coefficients for defining witness functions
+            alpha1 = alphas(:,1);
+            alpha2 = alphas(:,2);
+            
+            % Sort the witness function evaluations by their magnitude
+            % Points from X ~ \mu
+            [~,pi_ge] = sort(omega_X_ge_Y(x_idx).^2,'descend');
+            [~,pi_le] = sort(omega_X_le_Y(x_idx).^2,'descend');
+            % Points from Y ~ \nu
+            [~,sigma_ge] = sort(omega_X_ge_Y(~x_idx).^2,'descend');
+            [~,sigma_le] = sort(omega_X_le_Y(~x_idx).^2,'descend');
+            % Get magnitude of witness function evaluations on test points
+            omega_X_ge_Y_test = 0*X_test;
+            omega_X_ge_Y_test(:) = (kappa([X_test(:),Y_test(:)],Z,sigma)*alpha1).^2;
+            omega_X_le_Y_test = 0*X_test;
+            omega_X_le_Y_test(:) = (kappa([X_test(:),Y_test(:)],Z,sigma)*alpha2).^2;
+            
             
             k = 10; % Number of witness points top-k
             s = 4; %two figures (bures is two sided, so 4 figures)
@@ -309,6 +378,8 @@ for method_ii = 1:numel(methods1_rfb)
     end
 end
 
+divvv(ii) = Div_value;
+end
 
 
 %%  PLOT FIGURES
@@ -319,6 +390,18 @@ function plotfigures(X,Y,s,k,X_test,Y_test,omega_X_ge_Y_test,omega_X_le_Y_test,s
 marker_size_x = 6;
 marker_size_y = 6;
 marker_size_c = max(marker_size_x,marker_size_y) + 4;
+
+n = size(X,1);
+m = size(Y,1);
+%dim = get(h,'Position') -  [0.1 h.Position(2) 0 0];
+if m~=n
+    str = [sprintf('Nx=%d, Ny=%d',n,m)];
+    %annotation('textbox',dim,'String',str,'FitBoxToText','on','FontSize',15);
+else
+    str = ['m=n  ',sprintf('N_X=%d, N_Y=%d',n,m)];
+    %annotation('textbox',dim,'String',str,'FitBoxToText','on','FontSize',15);
+end
+
 
 for ii = 1:s
     subplot(s/2,2,ii)
@@ -334,7 +417,8 @@ for ii = 1:s
             plot(X(pi_ge(1:k),1),X(pi_ge(1:k),2),'ok','markersize',marker_size_c)
             witness_points = '$x_{\grave{\pi}(1)},\ldots,x_{\grave\pi(10)}$';
             h=legend('$X\sim \mu $','$Y\sim\nu$','$\omega^2_{\mu>\nu}$','interpreter','latex','location','southwest');
-            title(h,sprintf('%s',current_method))
+            title(h,[sprintf('%s: ',current_method),str],'interpreter','latex','FontWeight','normal')
+            legend('boxoff')
             set(h,'position',[ 0.4545    0.7996    0.1509    0.1340])
         case 2
             contour(X_test,Y_test,omega_X_ge_Y_test)
@@ -346,6 +430,7 @@ for ii = 1:s
             witness_points = '$y_{\acute{\sigma}(1)},\ldots,x_{\acute\sigma(10)}$';
             h=legend('$X\sim \mu $','$Y\sim\nu$','$\omega^2_{\mu<\nu}$','interpreter','latex','location','southwest');
             set(h,'position',[  0.4409    0.3142    0.1509    0.1340])
+            legend('boxoff')
         case 4
             contour(X_test,Y_test,omega_X_le_Y_test)
             plot(X(pi_le(1:k),1),X(pi_le(1:k),2),'ok','markersize',marker_size_c)
@@ -354,18 +439,6 @@ for ii = 1:s
     text(-1.1,-1.2,witness_points,'fontsize',20,'interpreter','latex')
 end
 colormap(flipud(gray))
-
-n = size(X,1);
-m = size(Y,1);
-dim = get(h,'Position') -  [0.1 h.Position(2) 0 0];
-if m~=n
-    str = ['m\neqn  ',sprintf('N_X=%d, N_Y=%d',n,m)];
-    annotation('textbox',dim,'String',str,'FitBoxToText','on','FontSize',15);
-else
-    str = ['m=n  ',sprintf('N_X=%d, N_Y=%d',n,m)];
-    annotation('textbox',dim,'String',str,'FitBoxToText','on','FontSize',15);
-end
-
 end
 
 %% PRINT FIGURES
