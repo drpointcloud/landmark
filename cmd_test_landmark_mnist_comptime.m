@@ -8,12 +8,12 @@ clear
 %load('C:\Users\yuksel\Google Drive\Resources\Implementation\MATLAB\Landmark_clean\emnist-mnist.mat');
 load('/Users/yuksel/Documents/Dataset/EMNIST/emnist-mnist.mat');
 
-%rng(10);  % set the random seed
+rng(0);  % set the random seed
 %%
 % Requires minFunc_2012
 %  addpath(genpath('path_to/minFunc_2012'))
 %%
-sample_size = round(10*linspace(1,50,25)); % Number of samples from p_X
+sample_size = round(100*linspace(1,50,25)); % Number of samples from p_X
 nperms = 1;
 p_missing = 0.85;%linspace(0,1,9);% for scenario two % the digit has 100*(1-q)% of
 nmonte = 1;%10*numel(p_missing);  % must be divisible by 3
@@ -85,18 +85,23 @@ for sample_ii = 1:numel(sample_size)
                 
                 %%
                 for method_ii = 1:Nmthds 
-                tic
+                
                 Z = double(cat(1,X,Y)); % combine two samples
                 x_idx = cat(1,ones(size(X,1),1),zeros(size(Y,1),1))==1; %bool indicator
-                [K,sigma] = gaussian_kernel(Z,'median');
+                
+
                 
         
                 %% methods
                 
                     if method_ii<3
+                        
                         method_way = methods{method_ii}{1};
                         method = methods{method_ii}{2};
                         
+                        tic
+                        [K,sigma] = gaussian_kernel(Z,'median');
+                
                         [V,~,~,~] =  method_way(K,x_idx,method);
                         %[V,divs,alpha,D1] =  method_way(K,x_idx,method);
                         time_spnt(monte_ii, method_ii) = toc;
@@ -108,6 +113,8 @@ for sample_ii = 1:numel(sample_size)
                         %alphas{monte_ii,method_ii} = alpha;
                     end
                     if method_ii ==3 && sample_ii<8
+                        tic
+                        [K,sigma] = gaussian_kernel(Z,'median');
                         Dkw = -2*K(x_idx, ~x_idx) + diag(K(x_idx,x_idx)) + diag(K(~x_idx,~x_idx))';
                         [~,D3]=hungarian(Dkw); %[C,T]=hungarian(A)
                         time_spnt(monte_ii, method_ii) = toc;
@@ -162,7 +169,7 @@ for method_ii=1:numel(total_methods)
 end
 
 t = title(['Computation Time (sc) (digit ',sprintf('"%d")',digit_ii-1)]);
-%set(t,'position',get(t,'position')-[0 axis_b 0])
+set(t,'position',get(t,'position')-[0 0 0])
 xlabel('Sample size (N)');
 xticks(1:8:numel(sample_size))
 set(gca,'XTickLabel',sprintf('%d\n',sample_size(1:8:end)),'fontsize',fontsize)
