@@ -51,8 +51,9 @@ else %if m is not equal to n, mass spliting applied for exact corresponding
     landmark_divs = mean(K_X_Z.^2,1) + mean(K_Y_Z.^2,1) - 2*sum((P'*sort(K_X_Z)).*sort(K_Y_Z) ,1);
 end
 
-[~,idx] = max(landmark_divs,[],'omitnan');
-div_max = sqrt(max(0,landmark_divs(idx)));
+
+[max_val,idx] = max(landmark_divs,[],'omitnan');
+div_max = sqrt(max(0,max_val));
 %div_mean = mean(landmark_divs,'omitnan');
 divs = div_max;%[div_max div_mean];
 
@@ -60,21 +61,53 @@ alphas = zeros(size(K,1),1);
 alphas(idx) = 1;
 V = K*alphas;
 
-if  nargin >2 && tests >1
-    p1=zeros(tests,1);
+% if  nargin >2 && tests >1
+%     p1=zeros(tests,1);
+%     for t=1:tests
+%         new_idx = x_idx(randperm(n+m));
+%         [~,p1(t,:),~,~] = L_MSKW(K,new_idx);
+%     end
+%     if nargout <= 4
+%         %D1 = mean(p1<divs); % proportion of the shuffle less than D_22
+%         %D2 = 1 - mean(D2>p2);
+%         D1 = p1;
+%     end
+% else
+%     D1 =0;
+% end​
+
+
+if nargin >2 && tests>1
+    p1 = zeros(tests,1);
     for t=1:tests
-        new_idx = x_idx(randperm(n+m));
+        new_idx = x_idx(randperm(m+n));
         [~,p1(t,:),~,~] = L_MSKW(K,new_idx);
     end
-    if nargout <= 4
-        %D1 = mean(p1<divs); % proportion of the shuffle less than D_22
-        %D2 = 1 - mean(D2>p2);
+
+    p2 = zeros(tests,1);
+    [~,rand_perm] = sort(rand(m+n,tests));
+    K_tilde = sort(K);
+
+    if m==n
+        for t=1:tests
+            p2(t,:) = sqrt(max(0,max(mean((K_tilde(rand_perm(1:m,t),:) - K_tilde(rand_perm(m+1:end,t),:)).^2,1))));
+        end
+    else
+        for t=1:tests
+            KXZ = K_tilde(rand_perm(1:m,t),:);
+            KYZ = K_tilde(rand_perm(m+1:end,t),:);
+            p2(t,:) = sqrt(max(0,max(mean(KXZ.^2,1) + mean(KYZ.^2,1) - 2*sum((P'*KXZ).*KYZ,1))));
+        end
+    end
+
+    if nargout<=4
         D1 = p1;
     end
 else
-    D1 =0;
+    D1 = 0;
 end
 
+%%
 
-   
+
 
