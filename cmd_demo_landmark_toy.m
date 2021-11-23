@@ -4,7 +4,7 @@ clc
 %%
 % Generate data in two distribution whose support looks like Venn diagrams
 savedir =   '/Users/yuksel/Desktop/';
-%rng(10);
+rng(0);
 n = 1000;
 d = 2;
 p = 1000;
@@ -474,6 +474,9 @@ print(gcf,fullfilename,'-dpdf') % then print it
 end
 
 %%
+
+
+
 
 %     [V,~,alpha,~] = L_MSKW(K,x_idx,nperms);
 %     [W,~,alphas] = kernel_max_slice(K,x_idx,'mmd');

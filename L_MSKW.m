@@ -76,36 +76,35 @@ V = K*alphas;
 %     D1 =0;
 % end​
 
-
 if nargin >2 && tests>1
-    p1 = zeros(tests,1);
-    for t=1:tests
-        new_idx = x_idx(randperm(m+n));
-        [~,p1(t,:),~,~] = L_MSKW(K,new_idx);
-    end
 
     p2 = zeros(tests,1);
-    [~,rand_perm] = sort(rand(m+n,tests));
     K_tilde = sort(K);
-
     if m==n
         for t=1:tests
-            p2(t,:) = sqrt(max(0,max(mean((K_tilde(rand_perm(1:m,t),:) - K_tilde(rand_perm(m+1:end,t),:)).^2,1))));
+            rand_perm = x_idx(randperm(numel(x_idx)), :);
+            p2(t,:) = sqrt(max(0,max(mean((K_tilde(rand_perm,:) - K_tilde(~rand_perm,:)).^2,1))));
         end
     else
         for t=1:tests
-            KXZ = K_tilde(rand_perm(1:m,t),:);
-            KYZ = K_tilde(rand_perm(m+1:end,t),:);
+            rand_perm = x_idx(randperm(numel(x_idx)), :);
+            KXZ = K_tilde(rand_perm,:);
+            KYZ = K_tilde(~rand_perm,:);
             p2(t,:) = sqrt(max(0,max(mean(KXZ.^2,1) + mean(KYZ.^2,1) - 2*sum((P'*KXZ).*KYZ,1))));
         end
     end
 
     if nargout<=4
-        D1 = p1;
+        D1 = p2;
     end
 else
     D1 = 0;
+    
 end
+
+
+end
+
 
 %%
 
