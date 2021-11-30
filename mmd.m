@@ -7,10 +7,9 @@ n = size(K,1) - m; % sample size for Y
 
 alphas = 1/m*x_idx - 1/n*(~x_idx);
 div_mmd = alphas'*K*alphas;
-%div_mmd_max_sliced = sqrt(max(0,sum((mean(K_X_Z,1) - mean(K_Y_Z,1)).^2)));  %finding mean diff
 divs = div_mmd;% div_mmd_max_sliced];
 
-V = K*alphas;
+V = K*alphas; % witness function evaluations
 
 
 if  nargin> 2 && tests > 1
