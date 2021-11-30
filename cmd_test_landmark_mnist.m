@@ -8,35 +8,31 @@ rng(0);  % set the random seed
 % Requires minFunc_2012
 %  addpath(genpath('path_to/minFunc_2012'))
 %%
+%% obtain a global median kernel bandwidh from a set of samples
+y_sel = randperm(numel(dataset.test.labels),250);
+x_sel = randperm(numel(dataset.train.labels),250);
+X = dataset.train.images(x_sel,:);
+Y = dataset.test.images(y_sel,:);
+Z = double(cat(1,X,Y)); % combine two samples
+[K,sigma] = gaussian_kernel(Z,'median');
+%%
 sample_size = 500;%round(100*linspace(1,5,5)); % Number of samples from p_X
 nperms = 25;
 p_missing = 0.75;%linspace(0,1,8);% prevalence is (1-p)/10
 nmonte = 50;
 classes = ['0'];%,'1','2','3','4','5','6','7','8','9'];
-
-%% obtain a global median kernel bandwidh from a set of samples
-N = sample_size(1);
-y_sel = randperm(numel(dataset.test.labels),N);
-x_sel = randperm(numel(dataset.train.labels),N);
-X = dataset.train.images(x_sel,:);
-Y = dataset.test.images(y_sel,:);
-Z = double(cat(1,X,Y)); % combine two samples
-[K,sigma] = gaussian_kernel(Z,'median');
 kernel_size = sigma*logspace(-1,1,10);
 %%
 
-
-%%
 methods = {
     %{@(K,x_idx,method) L_MSKB_one_side(K,x_idx,nperms), 'L-Bures-max',@(x) x};
     {@(K,x_idx) L_MSKW(K,x_idx,nperms), 'L-W2-max',@(x) x};
     {@(K,x_idx) mmd(K,x_idx,nperms), 'MMD',@(x) x};
     };
-total_methods = methods;
-Nmthds = numel(total_methods);
+Nmthds = numel(methods);
 Npmiss = numel(p_missing);
 Nkernelsize = numel(kernel_size);
-methods_name = arrayfun(@(i) total_methods{i}{2},(1:Nmthds),'uni',0);
+methods_name = arrayfun(@(i) methods{i}{2},(1:Nmthds),'uni',0);
 
 
 %%
@@ -45,7 +41,7 @@ Betahat = zeros(numel(sample_size),numel(p_missing),numel(kernel_size),numel(cla
 Witness = cell(size(Betahat));
 P_at_10 = nan(numel(sample_size),numel(p_missing),numel(kernel_size),numel(classes),nmonte,Nmthds);
 
-%%
+%% disp progress
 aaa = 0;
 perc = numel(sample_size)*numel(p_missing)*numel(kernel_size)*numel(classes);
 timestart = tic;
@@ -53,7 +49,7 @@ progress = '..........';
 %%
 for sample_ii = 1:numel(sample_size)
     Nx = sample_size(sample_ii);
-    Ny = round(1*Nx);
+    Ny = round(1*Nx); % m=n or m\neq n
 
     for pmiss_ii = 1:numel(p_missing)
         p_with_missing = p_missing(pmiss_ii);
@@ -91,14 +87,12 @@ for sample_ii = 1:numel(sample_size)
                     %%
                     Z = double(cat(1,X,Y)); % combine two samples
                     x_idx = cat(1,ones(size(X,1),1),zeros(size(Y,1),1))==1; %bool indicator
-                    %[K,sigma] = gaussian_kernel(Z,'median');
                     [K,~] = gaussian_kernel(Z,sigma_size);
 
                     %% methods
                     for method_ii = 1:Nmthds
 
                         method_way = methods{method_ii}{1};
-                        %[V,~,~,~] =  method_way(K,x_idx,method);
                         [V,divs,~,D1] =  method_way(K,x_idx);
                         betahat(monte_ii, method_ii) = mean(D1>=divs);
                         div_value(monte_ii, method_ii) = divs;
@@ -173,7 +167,7 @@ for i = 1:numel(pow_alpha)
 
     kk =0;
     subplot('position', [axis_l axis_b axis_w axis_h] )
-    for method_ii=1:numel(total_methods)
+    for method_ii=1:numel(methods)
         kk=kk+1;
         plot(powhat_ssize(:,:,:,:,:,method_ii),':','linewidth',linewidth,...
             'Marker',markers{kk},'MarkerSize',markersize);hold on
@@ -212,7 +206,7 @@ for i = 1:numel(pow_alpha)
 
     kk =0;
     subplot('position', [axis_l axis_b axis_w axis_h] )
-    for method_ii=1:numel(total_methods)
+    for method_ii=1:numel(methods)
         kk=kk+1;
         plot(powhat_pmiss(:,:,:,:,:,method_ii),':','linewidth',linewidth,...
             'Marker',markers{kk},'MarkerSize',markersize); hold on
@@ -255,7 +249,7 @@ for i = 1:numel(pow_alpha)
 
     kk =0;
     subplot('position', [axis_l axis_b axis_w axis_h] )
-    for method_ii=1:numel(total_methods)
+    for method_ii=1:numel(methods)
         kk=kk+1;
         plot(squeeze(powhat_ssize(:,:,:,:,:,method_ii)),':','linewidth',linewidth,'color',colors(kk+1,:),...
             'Marker',markers{kk+1},'MarkerSize',markersize);hold on
@@ -292,7 +286,7 @@ axis_l = axis_w*(col-1) + pad_w*col;axis_b = axis_h*(n_row-row) + pad_h*(n_row-r
 h = figure(4); clf; set(h,'WindowStyle','docked');
 kk=0;
 subplot('position', [axis_l axis_b axis_w axis_h] )
-for method_ii=1:numel(total_methods)
+for method_ii=1:numel(methods)
     kk=kk+1;
     plot(mean_p10(end,:,1,1,1,method_ii),'linestyle',linestyle{kk},...
         'linewidth',3,'Marker',markers{kk},'MarkerSize',10);hold on
@@ -315,7 +309,7 @@ axis_l = axis_w*(col-1) + pad_w*col;axis_b = axis_h*(n_row-row) + pad_h*(n_row-r
 kk=0;
 p_miss = 1;
 subplot('position', [axis_l axis_b axis_w axis_h] )
-for method_ii=1:numel(total_methods)
+for method_ii=1:numel(methods)
     kk=kk+1;
     plot(mean_p10(:,p_miss,1,1,1,method_ii),'linestyle',linestyle{kk},...
         'linewidth',linewidth,'Marker',markers{kk},'MarkerSize',10);hold on
@@ -337,7 +331,7 @@ axis_l = axis_w*(col-1) + pad_w*col;axis_b = axis_h*(n_row-row) + pad_h*(n_row-r
 kk=0;
 p_miss = 1;
 subplot('position', [axis_l axis_b axis_w axis_h] )
-for method_ii=1:numel(total_methods)
+for method_ii=1:numel(methods)
     kk=kk+1;
     plot(squeeze(mean_p10(end,p_miss,:,1,1,method_ii)),'linestyle',linestyle{kk},...
         'linewidth',linewidth,'Marker',markers{kk},'MarkerSize',10);hold on
