@@ -19,8 +19,6 @@ if  nargin> 2 && tests > 1
         [~,p1(t),~,~] = mmd(K,new_idx);
     end
     if nargout <= 4
-        %D1 = mean(p1<divs); % proportion of the shuffle less than D_22
-        %D2 = 1 - mean(D2>p2);
         D1 = p1;
     end
 else
