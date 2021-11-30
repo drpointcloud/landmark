@@ -85,7 +85,6 @@ for method_ii = 1:numel(methods_landmark)
 
     h = figure(10+method_ii);clf;set(h,'WindowStyle','docked') %dock the figure
     plotfigures(X,Y,s,k,X_test,Y_test,omega_X_ge_Y_test,omega_X_le_Y_test,sigma_ge,sigma_le,pi_ge,pi_le,methods_name{method_ii+offset})
-    %printfigure(savedir,methods_name{method_ii+offset})
 end
 
 %% Baseline Method(s)
@@ -128,9 +127,6 @@ for method_ii = 1:numel(methods1)
 
     h = figure(20+method_ii);clf;set(h,'WindowStyle','docked') %dock the figure
     plotfigures(X,Y,s,k,X_test,Y_test,omega_X_ge_Y_test,omega_X_le_Y_test,sigma_ge,sigma_le,pi_ge,pi_le,methods_name{method_ii+offset})
-    %printfigure(savedir,methods_name{method_ii+offset})
-
-
 end
 
 
