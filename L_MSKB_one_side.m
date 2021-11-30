@@ -43,7 +43,6 @@ B = sqrt(1/m)*K_X_Z; % D_\mu^\frac{1}{2}  K_{XZ}
 landmark_divs = abs(sqrt(sum(A.^2)) -  sqrt(sum(B.^2)));
 
 [div_max , idx] = max(landmark_divs,[],'omitnan');
-%div_mean = mean(landmark_divs,'omitnan');
 divs = div_max;%[div_max div_mean];
 
 alphas = zeros(size(K,1),1);
@@ -57,8 +56,6 @@ if  nargin> 2 && tests > 1
         [~,p1(t,:),~,~] = L_MSKB_one_side(K,new_idx);
     end
     if nargout <= 4
-        %D1 = mean(p1<divs); % proportion of the shuffle less than D_22
-        %D2 = 1 - mean(D2>p2);
         D1 = p1;
         
     end
