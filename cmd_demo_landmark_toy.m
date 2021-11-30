@@ -30,7 +30,7 @@ offsets = 1.5*[1 0 ; 0 0; cos(pi/3) sin(pi/3)];
 X = Z(1:n,:) + offsets(randi(3,n,1), :); % X ~ \mu is uniformly across the support
 %Y ~ \nu has mass [0, 1/3, 2/3] in each circle
 
-m = round(n*(1));% is when m=n
+m = round(n*(1));%  m=n or m\neq n
 Y = Z(m+1:2*m,:) + offsets(2+(rand(m,1)>1/3), :);
 
 
