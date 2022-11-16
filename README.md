@@ -7,7 +7,4 @@
 * We showed our proposed method could detect shifts locally, where the baseline method MMD explains the data globally. 
 
 
-# Dependencies
-We require the following dependencies:
-Fail loudly: https://github.com/steverab/failing-loudly  
 
