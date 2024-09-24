@@ -4,14 +4,14 @@
 
 ## Dependencies 
 
-* We require the followings<br>
+* Require the followings<br>
 fail loudly: https://github.com/steverab/failing-loudly<br>
 torch-two-sample: https://github.com/josipd/torch-two-sample<br>
 keras-resnet: https://github.com/broadinstitute/keras-resnet<br>
 
 
 
-* We require the following dependencies:<br>
+* Require the following dependencies:<br>
 keras: https://github.com/keras-team/keras<br>
 tensorflow: https://github.com/tensorflow/tensorflow<br>
 pytorch: https://github.com/pytorch/pytorch<br>
